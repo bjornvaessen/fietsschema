@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fietsschema Sept–Dec 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F4F7F4; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    #root { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 48px; }
+
+    button { font-family: inherit; cursor: pointer; }
+
+    .header {
+      background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%);
+      padding: 28px 20px 22px;
+      color: #fff;
+    }
+    .header-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+      opacity: 0.6; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .header-title { font-size: 22px; font-weight: 800; margin-bottom: 2px; }
+    .header-sub { font-size: 13px; opacity: 0.75; }
+
+    .toggle-wrap {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.13);
+      border-radius: 40px;
+      padding: 4px;
+      display: flex;
+      gap: 2px;
+    }
+    .toggle-btn {
+      flex: 1; padding: 10px 8px; border: none; border-radius: 36px;
+      font-size: 14px; transition: background 0.2s, color 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .toggle-btn.active { background: #fff; color: #1B4332; font-weight: 700; }
+    .toggle-btn.inactive { background: transparent; color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    .indoor-notice {
+      margin-top: 10px; font-size: 12px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 7px 12px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .month-tabs {
+      display: flex; background: #fff;
+      border-bottom: 1px solid #E0E8E0;
+      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .tab-btn {
+      flex: 1; padding: 13px 2px; border: none; background: transparent;
+      font-size: 12px; transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { font-weight: 800; color: #1B4332; border-bottom: 2px solid #1B4332; }
+    .tab-btn.inactive { font-weight: 500; color: #888; border-bottom: 2px solid transparent; }
+
+    .phase-wrap { padding: 14px 16px 0; }
+    .phase-title { font-weight: 800; font-size: 14px; color: #1B4332; margin-bottom: 6px; }
+    .phase-tip {
+      background: #E8F5EE; border-left: 3px solid #2D6A4F;
+      border-radius: 0 8px 8px 0; padding: 9px 13px;
+      font-size: 13px; color: #1B4332; line-height: 1.55;
+    }
+
+    .weeks-list { padding: 12px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+
+    .week-card {
+      border-radius: 14px; overflow: hidden;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .week-card.open {
+      border: 1.5px solid #2D6A4F;
+      box-shadow: 0 3px 14px rgba(45,106,79,0.12);
+    }
+    .week-card.closed {
+      border: 1.5px solid #E0E8E0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .week-header {
+      display: flex; align-items: center; padding: 14px 16px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .week-header.open { background: #F0FAF4; }
+    .week-header.closed { background: #fff; }
+
+    .week-badge {
+      min-width: 44px; height: 44px; border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; margin-right: 12px; transition: background 0.2s;
+    }
+    .week-badge.open { background: #2D6A4F; }
+    .week-badge.closed { background: #F0F0F0; }
+    .week-badge-label {
+      font-size: 9px; font-weight: 800; line-height: 1; text-transform: uppercase;
+    }
+    .week-badge.open .week-badge-label { color: rgba(255,255,255,0.65); }
+    .week-badge.closed .week-badge-label { color: #999; }
+    .week-badge-num { font-size: 17px; font-weight: 900; line-height: 1; }
+    .week-badge.open .week-badge-num { color: #fff; }
+    .week-badge.closed .week-badge-num { color: #555; }
+
+    .week-info { flex: 1; }
+    .week-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .week-title { font-weight: 800; font-size: 14px; color: #1B4332; }
+    .week-badge-current {
+      font-size: 10px; font-weight: 700; background: #2D6A4F; color: #fff;
+      border-radius: 20px; padding: 2px 8px;
+    }
+    .week-badge-note { font-size: 10px; color: #E8774A; font-weight: 600; }
+    .week-dates { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .week-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; margin-left: 8px; }
+    .week-chevron { font-size: 11px; color: #888; }
+    .week-mins { font-size: 10px; color: #aaa; }
+
+    .sessions-wrap {
+      padding: 10px 12px 12px;
+      border-top: 1px solid #E8F0E8;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .sess-card {
+      border-radius: 11px; overflow: hidden; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .sess-header {
+      display: flex; align-items: center; padding: 12px 14px; gap: 10px;
+    }
+    .sess-num {
+      min-width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; transition: background 0.15s, color 0.15s;
+    }
+    .sess-info { flex: 1; }
+    .sess-title { font-weight: 700; font-size: 13px; color: #1A3A2A; margin-bottom: 3px; }
+    .sess-right { text-align: right; flex-shrink: 0; }
+    .sess-dur { font-weight: 800; font-size: 14px; }
+    .sess-chev { font-size: 10px; color: #bbb; }
+
+    .sess-detail {
+      padding: 10px 14px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .detail-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    .detail-text { font-size: 13px; color: #333; line-height: 1.6; }
+    .focus-box {
+      background: #F0FFF8; border-left: 3px solid #52B788;
+      border-radius: 0 8px 8px 0; padding: 8px 12px;
+      font-size: 12px; color: #1B4332; line-height: 1.5;
+    }
+    .pills-row { display: flex; gap: 6px; }
+    .pill {
+      border-radius: 8px; padding: 4px 9px;
+      font-size: 11px; font-weight: 700;
+    }
+
+    .pips { display: flex; gap: 4px; }
+    .pip { width: 7px; height: 7px; border-radius: 50%; }
+
+    .footer {
+      text-align: center; color: #bbb; font-size: 11px;
+      margin-top: 20px; padding: 0 20px; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const MONTHS = ["September", "Oktober", "November", "December"];
+
+const mk = (title, duration, intensity, zone, plan, focus) =>
+  ({ title, duration, intensity, zone, plan, focus });
+
+const PLAN = {
+  September: {
+    subtitle: "Fase 1 — Ritme opbouwen",
+    tip: "2 kg af en al gereden — vliegende start. Doel: drie keer per week rijden wordt je normaal.",
+    weeks: [
+      { label: "Week 1", dates: "ma 14 – zo 20 sept", current: true,
+        outdoor: [
+          mk("Eerste rit", "30 min", 2, "Zone 2", "Rustig tempo — je kunt normaal praten. Verken een route en wen aan het rijden.", "Niets forceren. Dit is het begin."),
+          mk("Ritme zoeken", "35 min", 2, "Zone 2", "Zelfde rustig tempo. Probeer een constante cadans te houden (~80 rpm).", "Ontdek hoe 35 min voelt. Valt mee."),
+          mk("Weekendrit", "45 min", 2, "Zone 2", "Langste rit van week 1. Rustig tempo, geniet van buiten. Neem water mee.", "Dit mag makkelijk voelen — de uitdaging zit in de regelmaat."),
+        ],
+        indoor: [
+          mk("Cadanstraining", "20 min", 2, "Zone 2", "5 min inrijden → 10 min hogere cadans (85–90 rpm, lichte weerstand) → 5 min uitrijden.", "Benen leren soepel draaien. Niet doodtrappen."),
+          mk("Steady ride", "20 min", 2, "Zone 2", "20 min constant rustig. Geen structuur — muziek aan.", "Doel: de KICKR voelt normaal worden."),
+          mk("Progressief blok", "25 min", 3, "Zone 2–3", "10 min inrijden → 8 min iets harder (licht buiten adem) → 7 min uitrijden.", "Eerste keer bewust tempo verhogen. Kort houden."),
+        ],
+      },
+      { label: "Week 2", dates: "ma 21 – zo 27 sept",
+        outdoor: [
+          mk("Duurrit", "35 min", 2, "Zone 2", "Rustig tempo. Kies een route die je motiveert.", "Je lichaam went aan drie keer per week."),
+          mk("Iets langer", "45 min", 2, "Zone 2", "Zelfde rustige tempo. Probeer 45 min vol te maken.", "Houd ~80–85 rpm aan."),
+          mk("Weekendrit", "55 min", 2, "Zone 2", "Langste rit tot nu toe. Rustig tempo — neem iets te drinken.", "Je eerste rit van bijna een uur."),
+        ],
+        indoor: [
+          mk("Cadans + variatie", "20 min", 2, "Zone 2", "5 min inrijden → 3× (3 min Z2, 1 min hoge cadans 90+ rpm) → 5 min uitrijden.", "Afwisseling houdt het interessant."),
+          mk("Steady ride", "25 min", 2, "Zone 2", "25 min rustig en constant. Podcast of muziek aan.", "5 min langer dan week 1. Valt mee."),
+          mk("Progressief blok", "30 min", 3, "Zone 2–3", "10 min inrijden → 12 min iets harder → 8 min uitrijden.", "Voel je hoe het tempo verschilt?"),
+        ],
+      },
+      { label: "Week 3", dates: "ma 28 sept – zo 4 okt",
+        outdoor: [
+          mk("Duurrit", "35 min", 2, "Zone 2", "Rustig tempo, gewoon rijden. Volledige week — genoeg ruimte voor drie sessies.", "Consistency is key."),
+          mk("Matige rit", "45 min", 2, "Zone 2", "Zelfde rustige tempo als de vorige weken.", "Je zit inmiddels in het ritme — goed!"),
+          mk("Weekslot", "55 min", 2, "Zone 2", "Sluit september af met een goede rit. Rustig tempo.", "Hoe voel je je vs. 2 weken geleden?"),
+        ],
+        indoor: [
+          mk("Cadanstraining", "20 min", 2, "Zone 2", "5 min inrijden → 10 min hogere cadans → 5 min uitrijden.", "Vertrouwd programma. Goed uitvoeren."),
+          mk("Steady ride", "25 min", 2, "Zone 2", "25 min rustig. Muziek of podcast aan.", "Gewoon doorgaan."),
+          mk("Progressief blok", "30 min", 3, "Zone 2–3", "10 min inrijden → 12 min matig → 8 min uitrijden.", "Goed gevoel voor oktober."),
+        ],
+      },
+    ],
+  },
+  Oktober: {
+    subtitle: "Fase 2 — Duur uitbreiden",
+    tip: "Buiten nog goed te doen. Binnen: eerste echte gestructureerde sessies. Korte blokken houden het leefbaar.",
+    weeks: [
+      { label: "Week 1", dates: "ma 5 – zo 11 okt",
+        outdoor: [
+          mk("Duurrit", "40 min", 2, "Zone 2", "Rustig tempo. Kies een route die je leuk vindt.", "Je kunt comfortabel praten. Zo rustig is het."),
+          mk("Progressieve rit", "50 min", 3, "Zone 2–3", "15 min inrijden → 20 min matig → 15 min uitrijden.", "Leer je tempoverschil voelen."),
+          mk("Lange rit", "65 min", 2, "Zone 2", "Rustig en lang. Koffie stoppen mag.", "Langste rit tot nu toe. Rustig blijven."),
+        ],
+        indoor: [
+          mk("Cadans + herstel", "22 min", 2, "Zone 2", "5 min inrijden → 3× (3 min Z2, 1 min hoge cadans 90+ rpm) → 5 min uitrijden.", "Soepele benen opbouwen."),
+          mk("Tempotraining", "28 min", 3, "Zone 2–3", "5 min inrijden → 3× (4 min tempo, 2 min rustig) → 5 min uitrijden.", "Tempo = licht buiten adem maar je kunt nog zinnen afmaken."),
+          mk("Langste binnenrit", "32 min", 3, "Zone 2–3", "5 min inrijden → 18 min steady matig → 9 min uitrijden.", "Iets langer dan september. Het went."),
+        ],
+      },
+      { label: "Week 2", dates: "ma 12 – zo 18 okt",
+        outdoor: [
+          mk("Duurrit", "45 min", 2, "Zone 2", "Rustig en constante inspanning.", "Bewust je cadans in de gaten houden."),
+          mk("Progressieve rit", "55 min", 3, "Zone 2–3", "15 min inrijden → 25 min matig → 15 min uitrijden.", "Voel je al meer kracht in je benen?"),
+          mk("Lange rit", "70 min", 2, "Zone 2", "Rustig tempo. Neem water en een snack mee.", "70 minuten — bijna anderhalf uur."),
+        ],
+        indoor: [
+          mk("Cadans + herstel", "25 min", 2, "Zone 2", "5 min inrijden → 3× (4 min Z2, 1 min hoge cadans) → 5 min uitrijden.", "Vertrouwd patroon, iets langer."),
+          mk("Tempotraining", "30 min", 3, "Zone 2–3", "5 min inrijden → 3× (5 min tempo, 2 min rustig) → 4 min uitrijden.", "Eén minuut langer per blok."),
+          mk("Langste binnenrit", "33 min", 3, "Zone 2–3", "5 min inrijden → 20 min steady matig → 8 min uitrijden.", "Hou vol — het einde is dichterbij dan je denkt."),
+        ],
+      },
+      { label: "Week 3", dates: "ma 19 – zo 25 okt",
+        outdoor: [
+          mk("Duurrit", "45 min", 2, "Zone 2", "Rustig tempo. Herfst op de fiets is prachtig.", "Genieten en doorrollen."),
+          mk("Progressieve rit", "55 min", 3, "Zone 2–3", "15 min inrijden → 25 min matig → 15 min uitrijden.", "Vertrouwd ritme. Goed uitvoeren."),
+          mk("Lange rit", "75 min", 2, "Zone 2", "Langste rit tot nu toe. Rustig tempo — neem water en iets te eten.", "75 minuten. Maak er een uitje van."),
+        ],
+        indoor: [
+          mk("Cadans + herstel", "25 min", 2, "Zone 2", "5 min inrijden → 4× (3 min Z2, 1 min hoge cadans) → 4 min uitrijden.", "Eén blok meer dan vorige week."),
+          mk("Tempotraining", "30 min", 3, "Zone 2–3", "5 min inrijden → 3× (5 min tempo, 2 min rustig) → 4 min uitrijden.", "Zelfde als week 2 — voelt makkelijker."),
+          mk("Langste binnenrit", "35 min", 3, "Zone 2–3", "5 min inrijden → 22 min steady matig → 8 min uitrijden.", "Dit wordt je standaard voor de rest van oktober."),
+        ],
+      },
+      { label: "Week 4", dates: "ma 26 okt – zo 1 nov",
+        outdoor: [
+          mk("Duurrit", "45 min", 2, "Zone 2", "Rustig tempo. Oktober bijna klaar.", "Je fietst nu al een maand met regelmaat!"),
+          mk("Progressieve rit", "60 min", 3, "Zone 2–3", "15 min inrijden → 30 min matig → 15 min uitrijden.", "30 min matig tempo — dat is flink."),
+          mk("Lange rit", "75 min", 2, "Zone 2", "Rustig en genieten. Laatste lange rit van oktober.", "Hoe ver ben je vs. 5 oktober?"),
+        ],
+        indoor: [
+          mk("Cadans + herstel", "25 min", 2, "Zone 2", "5 min inrijden → 4× (3 min Z2, 1 min hoge cadans) → 4 min uitrijden.", "Vertrouwd patroon."),
+          mk("Tempotraining", "30 min", 3, "Zone 2–3", "5 min inrijden → 3× (5 min tempo, 2 min rustig) → 4 min uitrijden.", "Oktober afsluiten met goede sessies."),
+          mk("Langste binnenrit", "35 min", 3, "Zone 2–3", "5 min inrijden → 22 min steady matig → 8 min uitrijden.", "Goed gevoel voor november."),
+        ],
+      },
+    ],
+  },
+  November: {
+    subtitle: "Fase 3 — Structuur & intensiteit",
+    tip: "Donker en nat = meer binnen. Korte scherpe intervals maken de KICKR leefbaar én zijn effectiever dan lang leuteren.",
+    weeks: [
+      { label: "Week 1", dates: "ma 2 – zo 8 nov",
+        outdoor: [
+          mk("Lichtrit", "45 min", 2, "Zone 2", "Goede verlichting: voor, achter, zij. Rustig tempo, reflecterende kleding.", "Buiten rijden in november is al een overwinning."),
+          mk("Gemengde rit", "55 min", 3, "Zone 2–3", "15 min rustig → 25 min matig → 15 min uitrijden.", "Je lichaam weet inmiddels het verschil in tempo."),
+          mk("Herfstrit", "70 min", 2, "Zone 2", "Lang en rustig. Laagjes kleding. Snack mee voor ritten boven 60 min.", "Mentale kracht trainen. Doorzetten als het guur is."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 5× (1 min hard, 2 min rustig) → 5 min uitrijden.", "Hard = je kunt niet meer praten. 5 herhalingen en klaar."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig en continu. Geen structuur — podcast of serie aan.", "Herstel na de intervals. Lekker makkelijk, dat is de bedoeling."),
+          mk("Sweet spot", "33 min", 3, "Zone 3", "5 min inrijden → 2× (9 min sweet spot, 3 min rust) → 7 min uitrijden.", "Sweet spot = tussen matig en hard. Meest efficiënt voor gewichtsverlies."),
+        ],
+      },
+      { label: "Week 2", dates: "ma 9 – zo 15 nov",
+        outdoor: [
+          mk("Lichtrit", "45 min", 2, "Zone 2", "Goede verlichting. Rustig tempo.", "Donkerder dan oktober — pas je route aan indien nodig."),
+          mk("Gemengde rit", "60 min", 3, "Zone 2–3", "15 min rustig → 30 min matig → 15 min uitrijden.", "5 min langer matig dan week 1."),
+          mk("Herfstrit", "75 min", 2, "Zone 2", "Lang en rustig. Goed gekleed, water en snack mee.", "75 min is een volwaardige lange rit."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 5× (1 min hard, 2 min rustig) → 5 min uitrijden.", "Zelfde structuur als week 1. Probeer ietsje meer weerstand."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig. Geen structuur.", "Rustige dag na de intervals."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "1 min langer per blok dan week 1."),
+        ],
+      },
+      { label: "Week 3", dates: "ma 16 – zo 22 nov",
+        outdoor: [
+          mk("Lichtrit", "45 min", 2, "Zone 2", "Verlichting en reflectie. Rustig tempo.", "Goed in het ritme? Dat is het doel."),
+          mk("Gemengde rit", "60 min", 3, "Zone 2–3", "15 min rustig → 30 min matig → 15 min uitrijden.", "Vertrouwd patroon. Goed uitvoeren."),
+          mk("Lange herfstrit", "80 min", 2, "Zone 2", "Langste rit tot nu toe. Rustig tempo. Goed gekleed.", "80 min buiten in november — indrukwekkend."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 2 min rustig) → 4 min uitrijden.", "Eén herhaling meer dan vorige weken. Je bent sterker."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig. Podcast aan.", "Actief herstel."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "Solide sweet spot sessie."),
+        ],
+      },
+      { label: "Week 4", dates: "ma 23 – zo 29 nov",
+        outdoor: [
+          mk("Lichtrit", "45 min", 2, "Zone 2", "Donkerste weken van het jaar. Verlichting is essentieel.", "Buiten blijven = mentale kracht opbouwen."),
+          mk("Gemengde rit", "60 min", 3, "Zone 2–3", "15 min rustig → 30 min matig → 15 min uitrijden.", "Vertrouwd patroon. November bijna klaar."),
+          mk("Herfstrit", "90 min", 2, "Zone 2", "Langste rit van het schema. Rustig — neem zeker een snack mee.", "90 min. Neem de tijd. Geniet."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 2 min rustig) → 4 min uitrijden.", "Krachtig einde van november."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig. Muziek of serie aan.", "Rustig afronden."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "Goed gevoel voor de laatste novemberweken."),
+        ],
+      },
+      { label: "Week 5", dates: "ma 30 nov – zo 6 dec",
+        outdoor: [
+          mk("Winterlichtrit", "45 min", 2, "Zone 2", "Goede verlichting. Rustig tempo. December start maar de week hoort bij november.", "Consistent doorgaan — de kalender doet er niet toe."),
+          mk("Gemengde rit", "55 min", 3, "Zone 2–3", "15 min rustig → 25 min matig → 15 min uitrijden.", "Vertrouwd ritme de overgang in."),
+          mk("Weekendrit", "75 min", 2, "Zone 2", "Rustig en lang. Goed gekleed voor het decembergevoel.", "November klaar — sterker dan je begon."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 2 min rustig) → 4 min uitrijden.", "Zelfde structuur, vertrouwd gevoel."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig. Geen structuur.", "Rustige overgang naar december."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "Goed gevoel voor december."),
+        ],
+      },
+    ],
+  },
+  December: {
+    subtitle: "Fase 4 — Doorbijten & genieten",
+    tip: "December is mentaal het zwaarst: feestdagen, donker, kou. Doel is niet harder — doel is blijven rijden.",
+    weeks: [
+      { label: "Week 1", dates: "ma 7 – zo 13 dec",
+        outdoor: [
+          mk("Winterrit", "40 min", 2, "Zone 2", "Goed gekleed: base layer, fietsjas, handschoenen, overschoenen. Rustig tempo.", "Buiten rijden in december is al een overwinning."),
+          mk("Progressieve rit", "50 min", 3, "Zone 2–3", "15 min inrijden → 20 min matig → 15 min uitrijden.", "Vertrouwd patroon in de winterkou."),
+          mk("Vrijheidsrit", "65 min", 2, "Zone 2", "Geen plan — gewoon rijden waar je zin in hebt.", "Dit is waarom je fietst. Geniet."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 1,5 min rustig) → 5 min uitrijden.", "Iets korter herstel dan november — je bent sterker."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig. Geen structuur.", "Feestdagen of niet — gewoon op de KICKR."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "Voelt nu makkelijker dan in november."),
+        ],
+      },
+      { label: "Week 2", dates: "ma 14 – zo 20 dec",
+        outdoor: [
+          mk("Winterrit", "40 min", 2, "Zone 2", "Rustig tempo, goede verlichting en kleding.", "Consistent blijven."),
+          mk("Progressieve rit", "55 min", 3, "Zone 2–3", "15 min inrijden → 25 min matig → 15 min uitrijden.", "Je voelt nu hoeveel sterker je bent vs. september."),
+          mk("Vrijheidsrit", "65 min", 2, "Zone 2", "Vrij rijden. Geniet van de winter.", "Mooie rustige momenten in december."),
+        ],
+        indoor: [
+          mk("Intervaltraining", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 1,5 min rustig) → 5 min uitrijden.", "Scherp blijven."),
+          mk("Herstelrit", "30 min", 2, "Zone 2", "30 min rustig.", "Rust en consistentie."),
+          mk("Sweet spot", "35 min", 3, "Zone 3", "5 min inrijden → 2× (10 min sweet spot, 3 min rust) → 7 min uitrijden.", "Solide sessie."),
+        ],
+      },
+      { label: "Week 3", dates: "ma 21 – zo 27 dec", note: "Kerst 🎄",
+        outdoor: [
+          mk("Winterrit", "40 min", 2, "Zone 2", "Rustig en genieten. Kortste dag was 21 december.", "Goed gekleed — het kan vriezen. Pas op voor ijs."),
+          mk("Kerstrit", "50 min", 2, "Zone 2", "Rustig. Geen structuur — gewoon fietsen tussen de kerstdagen door.", "Kerst of niet — doorgaan."),
+          mk("Pre-nieuwjaarsrit", "60 min", 2, "Zone 2", "Geniet van de laatste weekrit voor oud & nieuw.", "Terugkijkend: wat een kwartaal."),
+        ],
+        indoor: [
+          mk("Kerst-intervals", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 1,5 min rustig) → 5 min uitrijden.", "Feestdagen of niet — doorgaan."),
+          mk("Herstelrit", "25 min", 2, "Zone 2", "25 min rustig. Iets korter vanwege de feestdagen.", "Flexibel zijn in december is ook consistentie."),
+          mk("Sweet spot", "30 min", 3, "Zone 3", "5 min inrijden → 2× (8 min sweet spot, 3 min rust) → 6 min uitrijden.", "Krachtig afsluiten voor oud & nieuw."),
+        ],
+      },
+      { label: "Week 4", dates: "ma 28 dec – zo 3 jan", note: "Oud & nieuw 🎉",
+        outdoor: [
+          mk("Eindejaaarsrit", "40 min", 2, "Zone 2", "Rustig tempo. Pas op voor ijs en vuurwerkresten. Geniet van de overgang.", "Consistent in de feestdagen is de echte overwinning."),
+          mk("Nieuwjaarsrit", "50 min", 2, "Zone 2", "Eerste of laatste rit van het jaar. Rustig en symbolisch.", "September tot januari: dat is een transformatie."),
+          mk("Vrijheidsrit", "60 min", 2, "Zone 2", "Geen plan — gewoon rijden. Kijk terug op hoe ver je gekomen bent.", "Dit is waarom je fietst. Goed gedaan."),
+        ],
+        indoor: [
+          mk("Eindejaar-intervals", "25 min", 4, "Zone 3–4", "5 min inrijden → 6× (1 min hard, 1,5 min rustig) → 5 min uitrijden.", "Sterk 2026 afsluiten."),
+          mk("Herstelrit", "25 min", 2, "Zone 2", "25 min rustig. Muziek of serie aan.", "Rustig het nieuwe jaar in."),
+          mk("Sweet spot eindejaar", "30 min", 3, "Zone 3", "5 min inrijden → 2× (8 min sweet spot, 3 min rust) → 6 min uitrijden.", "Goed einde van 2026. Wat een jaar!"),
+        ],
+      },
+    ],
+  },
+};
+
+const ZONE_COLORS = {
+  2: { bg: "#EBF4FF", border: "#2C7BB6", pill: "#2C7BB6" },
+  3: { bg: "#FFF3ED", border: "#E8774A", pill: "#E8774A" },
+  4: { bg: "#FFF0F0", border: "#D94A4A", pill: "#D94A4A" },
+};
+
+// ── State ──────────────────────────────────────────────────────
+let state = {
+  indoor: false,
+  month: "September",
+  openWeek: 0,
+  openSess: null,
+};
+
+function setState(patch) {
+  state = { ...state, ...patch };
+  render();
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function totalMins(sessions) {
+  return sessions.reduce((acc, s) => {
+    const m = s.duration.match(/(\d+)/);
+    return acc + (m ? parseInt(m[1]) : 0);
+  }, 0);
+}
+
+function pips(level) {
+  const color = level === 4 ? "#D94A4A" : level === 3 ? "#E8774A" : "#2C7BB6";
+  return Array.from({ length: 4 }, (_, i) =>
+    `<div class="pip" style="background:${i < level ? color : "#DDD"}"></div>`
+  ).join("");
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const { indoor, month, openWeek, openSess } = state;
+  const md = PLAN[month];
+
+  const weeksHtml = md.weeks.map((week, wi) => {
+    const sessions = indoor ? week.indoor : week.outdoor;
+    const isWeekOpen = openWeek === wi;
+    const c = isWeekOpen ? "#2D6A4F" : "#E0E8E0";
+    const shadow = isWeekOpen ? "0 3px 14px rgba(45,106,79,0.12)" : "0 1px 4px rgba(0,0,0,0.05)";
+
+    const sessionsHtml = sessions.map((s, si) => {
+      const key = `w${wi}s${si}`;
+      const isOpen = openSess === key;
+      const z = ZONE_COLORS[s.intensity];
+      return `
+        <div class="sess-card"
+          style="background:${isOpen ? z.bg : "#FAFCFA"};border:1.5px solid ${isOpen ? z.border : "#E8EDE8"};"
+          onclick="toggleSess('${key}')">
+          <div class="sess-header">
+            <div class="sess-num" style="background:${isOpen ? z.pill : "#EBEBEB"};color:${isOpen ? "#fff" : "#666"}">${si + 1}</div>
+            <div class="sess-info">
+              <div class="sess-title">${s.title}</div>
+              <div class="pips">${pips(s.intensity)}</div>
+            </div>
+            <div class="sess-right">
+              <div class="sess-dur" style="color:${z.pill}">${s.duration}</div>
+              <div class="sess-chev">${isOpen ? "▲" : "▼"}</div>
+            </div>
+          </div>
+          ${isOpen ? `
+          <div class="sess-detail" style="border-top:1px solid ${z.border}30">
+            <div>
+              <div class="detail-label" style="color:${z.pill}">Plan</div>
+              <div class="detail-text">${s.plan}</div>
+            </div>
+            <div class="focus-box">🎯 ${s.focus}</div>
+            <div class="pills-row">
+              <span class="pill" style="background:${z.bg};color:${z.pill}">${s.zone}</span>
+              <span class="pill" style="background:#F0F0F0;color:#666">${indoor ? "🏠 KICKR" : "🌳 Buiten"}</span>
+            </div>
+          </div>` : ""}
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="week-card ${isWeekOpen ? "open" : "closed"}" style="border-color:${c};box-shadow:${shadow}">
+        <div class="week-header ${isWeekOpen ? "open" : "closed"}" onclick="toggleWeek(${wi})">
+          <div class="week-badge ${isWeekOpen ? "open" : "closed"}">
+            <div class="week-badge-label">wk</div>
+            <div class="week-badge-num">${wi + 1}</div>
+          </div>
+          <div class="week-info">
+            <div class="week-title-row">
+              <span class="week-title">${week.label}</span>
+              ${week.current ? '<span class="week-badge-current">DEZE WEEK</span>' : ""}
+              ${week.note ? `<span class="week-badge-note">· ${week.note}</span>` : ""}
+            </div>
+            <div class="week-dates">${week.dates}</div>
+          </div>
+          <div class="week-meta">
+            <span class="week-chevron">${isWeekOpen ? "▲" : "▼"}</span>
+            <span class="week-mins">${totalMins(sessions)} min</span>
+          </div>
+        </div>
+        ${isWeekOpen ? `<div class="sessions-wrap">${sessionsHtml}</div>` : ""}
+      </div>`;
+  }).join("");
+
+  document.getElementById("root").innerHTML = `
+    <div class="header">
+      <div class="header-eyebrow">Fietsschema</div>
+      <div class="header-title">Sept – Dec 2026</div>
+      <div class="header-sub">3 sessies per week · jij kiest de dagen</div>
+      <div class="toggle-wrap">
+        <button class="toggle-btn ${!indoor ? "active" : "inactive"}" onclick="setIndoor(false)">🌳 Buiten</button>
+        <button class="toggle-btn ${indoor ? "active" : "inactive"}" onclick="setIndoor(true)">⚙️ Binnen (KICKR)</button>
+      </div>
+      ${indoor ? '<div class="indoor-notice">⚡ Binnen = korter &amp; scherper — 100% trapefficiëntie</div>' : ""}
+    </div>
+
+    <div class="month-tabs">
+      ${MONTHS.map(m => `
+        <button class="tab-btn ${month === m ? "active" : "inactive"}" onclick="setMonth('${m}')">${m.slice(0,3)}</button>
+      `).join("")}
+    </div>
+
+    <div class="phase-wrap">
+      <div class="phase-title">${md.subtitle}</div>
+      <div class="phase-tip">💡 ${md.tip}</div>
+    </div>
+
+    <div class="weeks-list">${weeksHtml}</div>
+
+    <div class="footer">
+      Tik op een week om te openen · Tik op een sessie voor details<br>
+      Weken lopen ma–zo, gecategoriseerd op de maandag
+    </div>
+  `;
+}
+
+// ── Actions ────────────────────────────────────────────────────
+function setIndoor(v)      { setState({ indoor: v, openSess: null }); }
+function setMonth(m)       { setState({ month: m, openWeek: 0, openSess: null }); }
+function toggleWeek(i)     { setState({ openWeek: state.openWeek === i ? null : i, openSess: null }); }
+function toggleSess(key)   { setState({ openSess: state.openSess === key ? null : key }); }
+
+// ── Boot ───────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
